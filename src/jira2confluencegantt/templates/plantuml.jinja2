@@ -1,0 +1,21 @@
+﻿@startgantt
+saturday are closed
+sunday are closed
+
+{% if parameters.tasks|length > 0 -%}
+Project starts {{ parameters.tasks.0.start }}
+{% for task in parameters.tasks -%}
+[<U+005b>{{ task.key }}<U+005d> {{ task.summary }}] as [{{ task.key }}] starts {{ task.start }} and ends {{ task.stop }}
+{% if task.percent is not none -%}
+{% if task.percent == 100 -%}
+[{{ task.key }}] is colored in LightGreen
+{% else -%}
+[{{ task.key }}] is {{ task.percent }}% complete
+{% endif -%}
+{% endif -%}
+{% for link in task.links -%}
+[{{ link }}] -> [{{ task.key }}]
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+@endgantt

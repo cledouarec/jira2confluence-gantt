@@ -1,0 +1,24 @@
+Server:
+  Jira: "https://my.jira.server.com"
+  Confluence: "https://my.confluence.server.com"
+
+Report: &PyGanttReport
+  Engine: "PlantUML"
+  Model: "report.jinja2"
+  Space: "SPACE"
+  Parent page: "My Parent Page"
+
+Fields: &WbsFields
+  Start date: "Start date (WBSGantt)"
+  End date: "Finish date (WBSGantt)"
+  Link: "is blocked by"
+
+Projects:
+  Project name:
+    JQL: "project = TEST"
+    Report: *PyGanttReport
+    Fields: *WbsFields
+  Second project name:
+    JQL: "project = TEST2"
+    Report: *PyGanttReport
+    Fields: *WbsFields

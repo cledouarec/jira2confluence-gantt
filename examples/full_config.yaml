@@ -1,0 +1,16 @@
+Server:
+  Jira: "https://my.jira.server.com"
+  Confluence: "https://my.confluence.server.com"
+
+Projects:
+  Project name:
+    JQL: "project = TEST"
+    Report:
+      Engine: "PlantUML"
+      Model: "report.jinja2"
+      Space: "SPACE"
+      Parent page: "My Parent Page"
+    Fields:
+      Start date: "Start date (WBSGantt)"
+      End date: "Finish date (WBSGantt)"
+      Link: "is blocked by"

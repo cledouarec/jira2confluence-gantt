@@ -1,0 +1,6 @@
+﻿{chart:type=gantt|width=1024|height={{ 60 + parameters.tasks|length * 25 }}|columns=,,1,2,3,4|dateFormat=dd/MM/yyyy}
+|| Current || Start || End || % Done ||
+{% for task in parameters.tasks -%}
+| {{ task.key }} | {{ task.start }} | {{ task.stop }} | {{ task.percent if task.percent is not none }}% |
+{% endfor -%}
+{chart}
