@@ -6,12 +6,13 @@ sunday are closed
 Project starts {{ parameters.tasks.0.start }}
 {% for task in parameters.tasks -%}
 [<U+005b>{{ task.key }}<U+005d> {{ task.summary }}] as [{{ task.key }}] starts {{ task.start }} and ends {{ task.stop }}
-{% if task.percent is not none -%}
-{% if task.percent == 100 -%}
-[{{ task.key }}] is colored in LightGreen
+{% if task.percent is none -%}
+[{{ task.key }}] is colored in #fefece/#7c7c03 /' Yellow '/
+{% elif task.percent == 100 -%}
+[{{ task.key }}] is colored in #bdf5bd/#116f11 /' Green '/
 {% else -%}
 [{{ task.key }}] is {{ task.percent }}% complete
-{% endif -%}
+[{{ task.key }}] is colored in #b6e1fc/#054d7a /' Blue '/
 {% endif -%}
 {% for link in task.links -%}
 [{{ link }}] -> [{{ task.key }}]
