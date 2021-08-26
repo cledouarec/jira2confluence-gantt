@@ -15,6 +15,7 @@
       "Fields": {
         "Start date": "Start date (WBSGantt)",
         "End date": "Finish date (WBSGantt)",
+        "Progress": "Progress (WBSGantt)",
         "Link": "is blocked by"
       }
     }

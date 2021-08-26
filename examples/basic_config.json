@@ -7,7 +7,6 @@
     "Project name": {
       "JQL": "project = TEST",
       "Report": {
-        "Engine": "PlantUML",
         "Space": "SPACE",
         "Parent page": "My Parent Page"
       },
