@@ -35,3 +35,20 @@ def test_create_reporter_with_invalid_chart_engine() -> None:
     project_config = {"Report": {"Engine": "InvalidEngine"}}
     with pytest.raises(Exception):
         create_report_engine("", project_config, [], ConfluenceClient())
+
+
+def test_create_reporter_with_confluence_chart_engine() -> None:
+    """
+    Reporter creation with Confluence chart engine must create it without
+    errors.
+    """
+    project_config = {"Report": {"Engine": "Confluence"}}
+    create_report_engine("", project_config, [], ConfluenceClient())
+
+
+def test_create_reporter_with_plant_uml_chart_engine() -> None:
+    """
+    Reporter creation with PlantUML chart engine must create it without errors.
+    """
+    project_config = {"Report": {"Engine": "PlantUML"}}
+    create_report_engine("", project_config, [], ConfluenceClient())

@@ -5,7 +5,7 @@ Utilities functions.
 """
 
 
-def keys_exists(element, *keys) -> bool:
+def keys_exists(element: dict, *keys) -> bool:
     """
     Check if *keys (nested) exists in `element` (dict).
 
