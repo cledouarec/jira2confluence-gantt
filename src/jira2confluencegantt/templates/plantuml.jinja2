@@ -1,21 +1,41 @@
 ﻿@startgantt
+!$yellow = %hsl_color(60, 80, 80)/%hsl_color(60, 100, 25)
+!$blue = %hsl_color(203, 70, 80)/%hsl_color(203, 100, 25)
+!$green = %hsl_color(120, 70, 80)/%hsl_color(120, 100, 25)
+!$light_yellow = %hsl_color(60, 80, 85)/%hsl_color(60, 80, 60)
+!$light_blue = %hsl_color(203, 70, 90)/%hsl_color(203, 70, 80)
+!$light_green = %hsl_color(120, 70, 90)/%hsl_color(120, 70, 80)
+
 saturday are closed
 sunday are closed
 
 {% if parameters.tasks|length > 0 -%}
-Project starts {{ parameters.tasks.0.start }}
+Project starts {{ parameters.tasks.0.start_date|format_date("%Y-%m-%d") }}
 {% for task in parameters.tasks -%}
-[<U+005b>{{ task.key }}<U+005d> {{ task.summary }}] as [{{ task.key }}] starts {{ task.start }} and ends {{ task.stop }}
-{% if task.percent is none -%}
-[{{ task.key }}] is colored in #fefece/#7c7c03 /' Yellow '/
-{% elif task.percent == 100 -%}
-[{{ task.key }}] is colored in #bdf5bd/#116f11 /' Green '/
+{% set task_summary_escaped = task.summary|replace("[", "<U+005b>")|replace("]", "<U+005d>") -%}
+{% if task.depth > 1 -%}
+[<U+005b>{{ task.key }}<U+005d> {{ task_summary_escaped }}] as [{{ task.key }}] starts {{ task.start_date|format_date("%Y-%m-%d") }} and ends {{ task.end_date|format_date("%Y-%m-%d") }}
+{% if task.progress_in_percent == 0 -%}
+[{{ task.key }}] is colored in $light_yellow
+{% elif task.progress_in_percent == 100 -%}
+[{{ task.key }}] is colored in $light_green
 {% else -%}
-[{{ task.key }}] is {{ task.percent }}% complete
-[{{ task.key }}] is colored in #b6e1fc/#054d7a /' Blue '/
+[{{ task.key }}] is {{ task.progress_in_percent }}% complete
+[{{ task.key }}] is colored in $light_blue
 {% endif -%}
-{% for link in task.links -%}
-[{{ link }}] -> [{{ task.key }}]
+{% else -%}
+[**<U+005b>{{ task.key }}<U+005d> {{ task_summary_escaped }}**] as [{{ task.key }}] starts {{ task.start_date|format_date("%Y-%m-%d") }} and ends {{ task.end_date|format_date("%Y-%m-%d") }}
+{% if task.progress_in_percent == 0 -%}
+[{{ task.key }}] is colored in $yellow
+{% elif task.progress_in_percent == 100 -%}
+[{{ task.key }}] is colored in $green
+{% else -%}
+[{{ task.key }}] is {{ task.progress_in_percent }}% complete
+[{{ task.key }}] is colored in $blue
+{% endif -%}
+{% endif -%}
+{% for blocking_task in task.blocking_tasks -%}
+[{{ blocking_task }}] -> [{{ task.key }}]
 {% endfor -%}
 {% endfor -%}
 {% endif -%}

@@ -14,7 +14,7 @@ from .jiraclient import JiraClient
 from .report import generate_all_reports
 
 
-def input_password() -> str:
+def _input_password() -> str:
     """
     Get password input by masking characters.
     Similar to getpass() but works with cygwin.
@@ -27,7 +27,7 @@ def input_password() -> str:
     return password
 
 
-def create_argument_parser() -> argparse.ArgumentParser:
+def _create_argument_parser() -> argparse.ArgumentParser:
     """
     Create the list of arguments supported and return the parser.
     """
@@ -66,7 +66,7 @@ def main() -> None:
     Entry point of gantt generator script.
     """
     # Parse command line
-    parser = create_argument_parser()
+    parser = _create_argument_parser()
     args = parser.parse_args()
 
     if args.verbose:
@@ -93,7 +93,7 @@ def main() -> None:
     if args.atlassian_user is None:
         args.atlassian_user = str(input("Enter login for Atlassian :\n"))
     if args.atlassian_password is None:
-        args.atlassian_password = input_password()
+        args.atlassian_password = _input_password()
 
     jira_client = JiraClient(
         config.jira,

@@ -5,7 +5,8 @@ Unit tests for report.
 """
 
 import pytest
-from jira2confluencegantt.report import create_report_engine
+from jira2confluencegantt.report import _create_report_engine
+from jira2confluencegantt.task import TaskList
 
 
 class ConfluenceClient:
@@ -32,9 +33,17 @@ def test_create_reporter_with_invalid_chart_engine() -> None:
     """
     Reporter creation with invalid chart engine must raise an exception.
     """
-    project_config = {"Report": {"Engine": "InvalidEngine"}}
+    project_config = {
+        "Report": {
+            "Engine": "InvalidEngine",
+            "Space": "SPACE",
+            "Parent page": "My Parent Page",
+        }
+    }
     with pytest.raises(Exception):
-        create_report_engine("", project_config, [], ConfluenceClient())
+        _create_report_engine(
+            "", project_config, TaskList(), ConfluenceClient()
+        )
 
 
 def test_create_reporter_with_confluence_chart_engine() -> None:
@@ -42,13 +51,25 @@ def test_create_reporter_with_confluence_chart_engine() -> None:
     Reporter creation with Confluence chart engine must create it without
     errors.
     """
-    project_config = {"Report": {"Engine": "Confluence"}}
-    create_report_engine("", project_config, [], ConfluenceClient())
+    project_config = {
+        "Report": {
+            "Engine": "Confluence",
+            "Space": "SPACE",
+            "Parent page": "My Parent Page",
+        }
+    }
+    _create_report_engine("", project_config, TaskList(), ConfluenceClient())
 
 
 def test_create_reporter_with_plant_uml_chart_engine() -> None:
     """
     Reporter creation with PlantUML chart engine must create it without errors.
     """
-    project_config = {"Report": {"Engine": "PlantUML"}}
-    create_report_engine("", project_config, [], ConfluenceClient())
+    project_config = {
+        "Report": {
+            "Engine": "PlantUML",
+            "Space": "SPACE",
+            "Parent page": "My Parent Page",
+        }
+    }
+    _create_report_engine("", project_config, TaskList(), ConfluenceClient())
