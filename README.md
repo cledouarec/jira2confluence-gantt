@@ -1,7 +1,7 @@
 # Jira to Confluence gantt chart generator
 
-[![Lint](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/lint.yml/badge.svg)](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/lint.yml)
-[![Unit tests](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/test.yml/badge.svg)](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/test.yml)
+[![Lint](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/lint.yaml/badge.svg)](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/lint.yaml)
+[![Unit tests](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/test.yaml/badge.svg)](https://github.com/cledouarec/jira2confluence-gantt/actions/workflows/test.yaml)
 
 **Table of Contents**
 * [Overview](#Overview)
@@ -21,6 +21,16 @@ engine :
 ![PlantUML engine](examples/PlantUML.png)
 
 ## Installation
+
+### From PyPI (Recommended)
+
+You can install the exporter easily with the following command or insert into
+your requirements file :
+```
+pip install jira2confluence-gantt
+```
+
+### From sources
 
 It is recommended to use a virtual environment :
 ```
