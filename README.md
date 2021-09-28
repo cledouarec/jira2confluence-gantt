@@ -17,8 +17,8 @@ This module has the objective to create a gantt chart from Jira data and
 publish and publish the resulting chart and status on Confluence.
 It provides different render engines, but it is easy to add its own custom
 engine :
-![Confluence engine](examples/ConfluenceChart.png)
-![PlantUML engine](examples/PlantUML.png)
+![Confluence engine](https://github.com/cledouarec/jira2confluence-gantt/raw/main/examples/ConfluenceChart.png)
+![PlantUML engine](https://github.com/cledouarec/jira2confluence-gantt/raw/main/examples/PlantUML.png)
 
 ## Installation
 
