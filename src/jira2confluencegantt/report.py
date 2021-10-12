@@ -44,6 +44,7 @@ class ReportEngine:
         output_parent_page: str,
         tasks: TaskList,
         confluence_client: Optional[ConfluenceClient] = None,
+        has_legend: bool = False,
     ):
         """
         Constructs the report generator for the `project_name`.
@@ -59,6 +60,7 @@ class ReportEngine:
         :param output_parent_page: Project output Confluence parent page.
         :param tasks: Tasks list extracted from Jira.
         :param confluence_client: Confluence client to publish report.
+        :param has_legend: Define if the report has a legend.
         """
         logger.debug("Create report engine")
 
@@ -72,6 +74,8 @@ class ReportEngine:
         self._tasks: TaskList = tasks
         #: Confluence client
         self._confluence_client: Optional[ConfluenceClient] = confluence_client
+        #: Define if the report has a legend
+        self._has_legend: bool = has_legend
         #: Object to manipulate the templates.
         self._templates: Environment = Environment(
             loader=PackageLoader("jira2confluencegantt"),
@@ -141,6 +145,7 @@ class ConfluenceEngine(ReportEngine):
         output_parent_page: str,
         tasks: TaskList,
         confluence_client: Optional[ConfluenceClient] = None,
+        has_legend: bool = False,
     ):
         """
         Constructs the report generator for the `project_name` with Confluence
@@ -157,6 +162,7 @@ class ConfluenceEngine(ReportEngine):
         :param output_parent_page: Project output Confluence parent page.
         :param tasks: Tasks list extracted from Jira.
         :param confluence_client: Confluence client to publish report.
+        :param has_legend: Define if the report has a legend.
         """
         logger.debug("Create Confluence report engine")
 
@@ -166,6 +172,7 @@ class ConfluenceEngine(ReportEngine):
             output_parent_page,
             tasks,
             confluence_client,
+            has_legend,
         )
 
         #: Confluence gantt macro
@@ -183,7 +190,10 @@ class ConfluenceEngine(ReportEngine):
 
         self.__gantt = self._generate_content_from_template(
             ConfluenceEngine.__CHART_TEMPLATE,
-            {"tasks": self._tasks.to_pre_order_list()},
+            {
+                "tasks": self._tasks.to_pre_order_list(),
+                "has_legend": self._has_legend,
+            },
         )
 
         logger.debug(
@@ -228,6 +238,7 @@ class PlantUMLEngine(ReportEngine):
         output_parent_page: str,
         tasks: TaskList,
         confluence_client: Optional[ConfluenceClient] = None,
+        has_legend: bool = False,
     ):
         """
         Constructs the report generator for the `project_name` with PlantUML.
@@ -243,6 +254,7 @@ class PlantUMLEngine(ReportEngine):
         :param output_parent_page: Project output Confluence parent page.
         :param tasks: Tasks list extracted from Jira.
         :param confluence_client: Confluence client to publish report.
+        :param has_legend: Define if the report has a legend.
         """
         logger.debug("Create PlantUML report engine")
 
@@ -252,6 +264,7 @@ class PlantUMLEngine(ReportEngine):
             output_parent_page,
             tasks,
             confluence_client,
+            has_legend,
         )
 
         self.__gantt = ""
@@ -268,7 +281,10 @@ class PlantUMLEngine(ReportEngine):
 
         self.__gantt = self._generate_content_from_template(
             PlantUMLEngine.__PLANT_UML_TEMPLATE,
-            {"tasks": self._tasks.to_pre_order_list()},
+            {
+                "tasks": self._tasks.to_pre_order_list(),
+                "has_legend": self._has_legend,
+            },
         )
 
         logger.debug(
@@ -428,6 +444,7 @@ def _create_report_engine(
     chart_engine = ChartEngine(project_config["Report"]["Engine"])
     output_space = project_config["Report"]["Space"]
     output_parent_page = project_config["Report"]["Parent page"]
+    legend = project_config["Report"]["Legend"]
 
     if chart_engine == ChartEngine.CONFLUENCE:
         return ConfluenceEngine(
@@ -436,6 +453,7 @@ def _create_report_engine(
             output_parent_page,
             tasks,
             confluence_client,
+            legend,
         )
     if chart_engine == ChartEngine.PLANT_UML:
         return PlantUMLEngine(
@@ -444,6 +462,7 @@ def _create_report_engine(
             output_parent_page,
             tasks,
             confluence_client,
+            legend,
         )
     raise Exception("Invalid Gantt engine")
 

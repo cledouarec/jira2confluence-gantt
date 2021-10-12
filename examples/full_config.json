@@ -8,6 +8,7 @@
       "JQL": "project = TEST",
       "Report": {
         "Engine": "PlantUML",
+        "Legend": true,
         "Model": "report.jinja2",
         "Space": "SPACE",
         "Parent page": "My Parent Page"

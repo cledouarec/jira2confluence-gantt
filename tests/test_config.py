@@ -143,6 +143,7 @@ def full_config():
                 "JQL": "My JQL",
                 "Report": {
                     "Engine": "My engine",
+                    "Legend": True,
                     "Model": "My model",
                     "Space": "My confluence space",
                     "Parent page": "My parent page",
@@ -236,6 +237,16 @@ def test_config_without_project_report_engine_config(full_config) -> None:
     del full_config["Projects"]["Project"]["Report"]["Engine"]
     config = Config(full_config)
     assert config.projects["Project"]["Report"]["Engine"] == "Confluence"
+
+
+def test_config_without_project_report_legend_config(full_config) -> None:
+    """
+    A config without Projects/Project/Report/Legend node must be created to
+    False value.
+    """
+    del full_config["Projects"]["Project"]["Report"]["Legend"]
+    config = Config(full_config)
+    assert not config.projects["Project"]["Report"]["Legend"]
 
 
 def test_config_without_project_report_model_config(full_config) -> None:

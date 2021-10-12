@@ -227,7 +227,7 @@ JQL: 'project = "MY TEST"'
 #### Report
 
 For each project, the `Report` node must be defined to defined how it is
-generated.
+generated.  
 **It is a mandatory field.**
 
 #### Engine
@@ -257,7 +257,7 @@ Report:
 
 #### Space
 
-The `Space` attribute is used to defined the Confluence destination space.
+The `Space` attribute is used to defined the Confluence destination space.  
 **It is a mandatory field.**
 
 **_In Yaml :_**
@@ -277,7 +277,7 @@ Report:
 #### Parent page
 
 The `Parent page` attribute is used to define the Confluence parent page of the
-report page.
+report page.  
 **It is a mandatory field.**
 
 **_In Yaml :_**
@@ -294,12 +294,31 @@ Report:
 }
 ```
 
+#### Legend
+
+The `Legend` attribute is used to define if a legend is added in the gantt
+chart.  
+**It is a mandatory field, by default the legend is not added.**
+
+**_In Yaml :_**
+```yaml
+Report:
+  Legend: true
+```
+**_In Json :_**
+```json
+{
+  "Report": {
+    "Legend": true
+  }
+}
+```
+
 #### Model (Not implemented yet)
 
 The `Model` template is a filename written with [Jinja2](https://jinja.palletsprojects.com/en/3.0.x/).
 It will define how the Confluence page will be rendered.
-The template uses [Confluence Wiki Markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html).
-
+The template uses [Confluence Wiki Markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html).  
 **It is an optional field. the template contains only the Gantt chart.**
 
 **_In Yaml :_**
@@ -368,16 +387,16 @@ Define the Jira field to use as a start date for task in Gantt chart.
 
 #### End date
 
-Define the Jira field to use as a start date for task in Gantt chart.    
+Define the Jira field to use as a start date for task in Gantt chart.  
 **It is a mandatory field.**
 
 #### Progress
 
-Define the Jira field to use as a percent of work done for task in Gantt chart.    
+Define the Jira field to use as a percent of work done for task in Gantt chart.  
 **It is an optional field.**
 
 #### Link
 
 Define the Jira inward link to use in order to define how the tasks could be
-blocked by others tasks task in Gantt chart. 
+blocked by others tasks task in Gantt chart.  
 **It is an optional field. By default, the link used is "is blocked by"**

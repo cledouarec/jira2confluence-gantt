@@ -73,6 +73,8 @@ class Config:
             )
         if not keys_exists(project_config, "Report", "Engine"):
             project_config["Report"]["Engine"] = "Confluence"
+        if not keys_exists(project_config, "Report", "Legend"):
+            project_config["Report"]["Legend"] = False
         if not keys_exists(project_config, "Report", "Model"):
             project_config["Report"]["Model"] = None
 

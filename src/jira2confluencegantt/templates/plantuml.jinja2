@@ -1,10 +1,39 @@
 ﻿@startgantt
-!$yellow = %hsl_color(60, 80, 80)/%hsl_color(60, 100, 25)
-!$blue = %hsl_color(203, 70, 80)/%hsl_color(203, 100, 25)
-!$green = %hsl_color(120, 70, 80)/%hsl_color(120, 100, 25)
-!$light_yellow = %hsl_color(60, 80, 85)/%hsl_color(60, 80, 60)
-!$light_blue = %hsl_color(203, 70, 90)/%hsl_color(203, 70, 80)
-!$light_green = %hsl_color(120, 70, 90)/%hsl_color(120, 70, 80)
+!$yellow = %hsl_color(60, 80, 80)
+!$yellow_border = %hsl_color(60, 100, 25)
+!$task_not_started = $yellow/$yellow_border
+!$light_yellow = %hsl_color(60, 80, 85)
+!$light_yellow_border = %hsl_color(60, 80, 60)
+!$subtask_not_started = $light_yellow/$light_yellow_border
+
+!$blue = %hsl_color(203, 70, 80)
+!$blue_border = %hsl_color(203, 100, 25)
+!$task_ongoing = $blue/$blue_border
+!$light_blue = %hsl_color(203, 70, 90)
+!$light_blue_border = %hsl_color(203, 70, 80)
+!$subtask_ongoing = $light_blue/$light_blue_border
+
+!$green = %hsl_color(120, 70, 80)
+!$green_border = %hsl_color(120, 100, 25)
+!$task_finished = $green/$green_border
+!$light_green = %hsl_color(120, 70, 90)
+!$light_green_border = %hsl_color(120, 70, 80)
+!$subtask_finished = $light_green/$light_green_border
+
+{% if parameters.has_legend -%}
+skinparam Legend {
+    BackgroundColor #EEEEEE
+    BorderThickness 0
+}
+
+legend left
+    <#transparent,#transparent>|=    Task    |= SubTask |=   Description |
+    | <$yellow> | <$light_yellow> |    Not started |
+    | <$blue> | <$light_blue> |    On going |
+    | <$green> | <$light_green> |    Finished |
+<&arrow-right> Dependency link
+end legend
+{% endif -%}
 
 saturday are closed
 sunday are closed
@@ -16,22 +45,22 @@ Project starts {{ parameters.tasks.0.start_date|format_date("%Y-%m-%d") }}
 {% if task.depth > 1 -%}
 [<U+005b>{{ task.key }}<U+005d> {{ task_summary_escaped }}] as [{{ task.key }}] starts {{ task.start_date|format_date("%Y-%m-%d") }} and ends {{ task.end_date|format_date("%Y-%m-%d") }}
 {% if task.progress_in_percent == 0 -%}
-[{{ task.key }}] is colored in $light_yellow
+[{{ task.key }}] is colored in $subtask_not_started
 {% elif task.progress_in_percent == 100 -%}
-[{{ task.key }}] is colored in $light_green
+[{{ task.key }}] is colored in $subtask_finished
 {% else -%}
 [{{ task.key }}] is {{ task.progress_in_percent }}% complete
-[{{ task.key }}] is colored in $light_blue
+[{{ task.key }}] is colored in $subtask_ongoing
 {% endif -%}
 {% else -%}
 [**<U+005b>{{ task.key }}<U+005d> {{ task_summary_escaped }}**] as [{{ task.key }}] starts {{ task.start_date|format_date("%Y-%m-%d") }} and ends {{ task.end_date|format_date("%Y-%m-%d") }}
 {% if task.progress_in_percent == 0 -%}
-[{{ task.key }}] is colored in $yellow
+[{{ task.key }}] is colored in $task_not_started
 {% elif task.progress_in_percent == 100 -%}
-[{{ task.key }}] is colored in $green
+[{{ task.key }}] is colored in $task_finished
 {% else -%}
 [{{ task.key }}] is {{ task.progress_in_percent }}% complete
-[{{ task.key }}] is colored in $blue
+[{{ task.key }}] is colored in $task_ongoing
 {% endif -%}
 {% endif -%}
 {% for blocking_task in task.blocking_tasks -%}
