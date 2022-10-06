@@ -54,7 +54,7 @@ Project starts {{ parameters.tasks.0.start_date|format_date("%Y-%m-%d") }}
 {% endif -%}
 {% else -%}
 [**<U+005b>{{ task.key }}<U+005d> {{ task_summary_escaped }}**] as [{{ task.key }}] starts {{ task.start_date|format_date("%Y-%m-%d") }} and ends {{ task.end_date|format_date("%Y-%m-%d") }}
-{% if task.progress_in_percent == 0 -%}
+{% if task.progress_in_percent is none or task.progress_in_percent == 0 -%}
 [{{ task.key }}] is colored in $task_not_started
 {% elif task.progress_in_percent == 100 -%}
 [{{ task.key }}] is colored in $task_finished

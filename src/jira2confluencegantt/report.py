@@ -8,6 +8,7 @@ from datetime import date
 from enum import Enum, unique
 import logging
 from typing import Any, Optional
+from dateutil.parser import isoparse
 from jinja2 import Environment, PackageLoader
 from .config import Config
 from .confluenceclient import ConfluenceClient
@@ -332,11 +333,13 @@ def _tickets_from_project(
         "summary",
         start_date_field,
         end_date_field,
-        project_config["Fields"]["Progress"],
         "parent",
         "subtasks",
         "issuelinks",
     ]
+    if project_config["Fields"]["Progress"]:
+        fields.append(project_config["Fields"]["Progress"])
+
     tickets = jira_client.tickets_from_jql(
         jql=project_config["JQL"], fields=fields
     )
@@ -348,8 +351,8 @@ def _tickets_from_project(
         :param ticket: Ticket to test.
         :return: Boolean status of the check.
         """
-        start_date = ticket["fields"][start_date_field]
-        end_date = ticket["fields"][end_date_field]
+        start_date = ticket["fields"].get(start_date_field)
+        end_date = ticket["fields"].get(end_date_field)
         return start_date is not None and end_date is not None
 
     return sorted(
@@ -379,11 +382,6 @@ def _create_tasks_from_tickets(
 
     tasks = TaskList()
     for ticket in tickets:
-        # By default a task without progress is considered not started
-        progress = ticket["fields"][progress_field]
-        if progress is None:
-            progress = 0.0
-
         # Get blocking tasks
         blocking_tasks = []
         for link in ticket["fields"]["issuelinks"]:
@@ -413,9 +411,9 @@ def _create_tasks_from_tickets(
         Task(
             key=ticket["key"],
             summary=ticket["fields"]["summary"],
-            start_date=date.fromisoformat(ticket["fields"][start_date_field]),
-            end_date=date.fromisoformat(ticket["fields"][end_date_field]),
-            progress_in_percent=progress,
+            start_date=isoparse(ticket["fields"][start_date_field]),
+            end_date=isoparse(ticket["fields"][end_date_field]),
+            progress_in_percent=ticket["fields"].get(progress_field),
             blocking_tasks=blocking_tasks,
             parent=parent,
             children=children,
