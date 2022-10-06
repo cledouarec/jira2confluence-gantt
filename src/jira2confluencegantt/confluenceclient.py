@@ -39,10 +39,20 @@ class ConfluenceClient:
         if not confluence_password:
             raise Exception("Confluence password is invalid")
         try:
+            # Fix API version for cloud to avoid issue
+            if (
+                "atlassian.net" in confluence_url
+                or "jira.com" in confluence_url
+            ):
+                api_version = "cloud"
+            else:
+                api_version = "latest"
+
             self.__confluence_client: Confluence = Confluence(
                 url=confluence_url,
                 username=confluence_username,
                 password=confluence_password,
+                api_version=api_version,
             )
         except Exception as error:
             raise Exception("Failed to create Confluence client") from error
