@@ -26,49 +26,51 @@ engine :
 
 You can install the exporter easily with the following command or insert into
 your requirements file :
-```
+```shell
 pip install jira2confluence-gantt
 ```
 
 ### From sources
 
-It is recommended to use a virtual environment :
+All the project is managed with **Poetry**. To install it, please visit the
+[official page](https://python-poetry.org/docs/#installation) and follow these
+instructions :
+```shell
+poetry shell
+poetry install --without dev
 ```
-python -m venv venv
-```
-To install the module and the main script, simply do :
-```
-pip install .
-```
+
 For the developers, it is useful to install extra tools like :
+* [commitizen](https://commitizen-tools.github.io/commitizen/)
 * [pre-commit](https://pre-commit.com)
 * [pytest](http://docs.pytest.org)
+* [ruff](https://docs.astral.sh/ruff/)
 
 These tools can be installed with the following command :
-```
-pip install .[dev]
+```shell
+poetry install
 ```
 The Git hooks can be installed with :
-```
-pre-commit install
+```shell
+poetry run pre-commit install
 ```
 The hooks can be run manually at any time :
-```
-pre-commit run --all-file
+```shell
+poetry run pre-commit run --all-file
 ```
 
 ## Usage
 
 The script with required argument can be started by executing the following
 command :
-```
-./jira2confluence-gantt my_config.yaml
+```shell
+jira2confluence-gantt my_config.yaml
 ```
 
 The full list of arguments supported can be displayed with the following
 helper :
-```
-./jira2confluence-gantt.exe -h
+```shell
+jira2confluence-gantt -h
 usage: jira2confluence-gantt [-h] [-v] [config.yaml]
 
 positional arguments:
