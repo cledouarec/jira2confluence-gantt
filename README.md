@@ -93,7 +93,7 @@ In the configuration file, there are 2 main sections required :
 
 ### Server configuration
 
-The **Server** node will configure the URL of the Jira and Confluence server.
+The **server** node will configure the URL of the Jira and Confluence server.
 For the moment, only the username/token authentication is supported.
 The credentials could be defined with environment variables or `.env` file.
 
@@ -104,239 +104,112 @@ ATLASSIAN_TOKEN=<your token>
 
 **_In Yaml :_**
 ```yaml
-Server:
-  Jira: "https://my.jira.server.com"
-  Confluence: "https://my.confluence.server.com"
+server:
+  jira: "https://my.jira.server.com"
+  confluence: "https://my.confluence.server.com"
 ```
 **_In Json :_**
 ```json
 {
-  "Server": {
-    "Jira": "https://my.jira.server.com",
-    "Confluence": "https://my.confluence.server.com"
+  "server": {
+    "jira": "https://my.jira.server.com",
+    "confluence": "https://my.confluence.server.com"
   }
 }
 ```
 
-#### Server
-
-Main configuration node for server.  
-**It is a mandatory field.**
-
-#### Jira
-
-Define the Jira server URL to retrieve tickets information to construct Gantt
-chart.  
-**It is a mandatory field.**
-
-#### Confluence
-
-Define the Confluence server URL to publish the report.  
-**It is an optional field. If the confluence server isn't set, only the gantt
-chart will be generated if the engine permit it.**
+| Attribute  | Required | Description                                                                                                                                      |
+|------------|:--------:|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| server     |    ✅     | Main configuration node for server.                                                                                                              |
+| jira       |    ✅     | Jira server URL to retrieve tickets information.                                                                                                 |
+| confluence |    ❌     | Confluence server URL to publish the report. If the confluence server isn't set, only the gantt chart will be generated if the engine permit it. |
 
 ### Project configuration
 
-The `Projects` node will provide the configuration for each project.
+The `projects` node will provide the configuration for each project.
 
 **_In Yaml :_**
 ```yaml
-Projects:
-  <Project name>:
-    JQL: "project = TEST"
-    Report:
-      Engine: "PlantUML" # Confluence
-      Model: "report.jinja2"
-    Fields:
-      Start date: "Start date (WBSGantt)"
-      End date: "Finish date (WBSGantt)"
-      Progress: "Progress (WBSGantt)"
+projects:
+  - name: "Project name"
+    jql: "project = TEST"
+    report:
+      space: "SPACE"
+      parent_page: "My Parent Page"
+      engine: "PlantUML"
+      legend: True
+      template: "report.jinja2"
+    fields:
+      start_date: "Start date (WBSGantt)"
+      end_date: "Finish date (WBSGantt)"
+      progress: "Progress (WBSGantt)"
+      link: "is blocked by"
 ```
 **_In Json :_**
 ```json
 {
-  "Projects": {
-    "<Project name>": {
-      "JQL": "project = TEST",
-      "Report": {
-        "Engine": "PlantUML",
-        "Model": "report.jinja2"
+  "projects": [
+    {
+      "name": "Project name",
+      "jql": "project = TEST",
+      "report": {
+        "space": "SPACE",
+        "parent_page": "My Parent Page",
+        "engine": "PlantUML",
+        "legend": true,
+        "template": "report.jinja2"
       },
-      "Fields": {
-        "Start date": "Start date (WBSGantt)",
-        "End date": "Finish date (WBSGantt)",
-        "Progress": "Progress (WBSGantt)"
+      "fields": {
+        "start_date": "Start date (WBSGantt)",
+        "end_date": "Finish date (WBSGantt)",
+        "progress": "Progress (WBSGantt)",
+        "link": "is blocked by"
       }
     }
-  }
+  ]
 }
 ```
 
-#### Projects
+| Attribute | Required | Description                                                                                                                                      |
+|-----------|:--------:|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| projects  |    ✅     | Main configuration node for all projects.                                                                                                        |
+| name      |    ✅     | Name of the project.<br/>This name will be used as a title in the Gantt chart and also as a name in Snake case format for the output gantt file. |
+| jql       |    ✅     | [JQL](https://www.atlassian.com/blog/jira-software/jql-the-most-flexible-way-to-search-jira-14) query to retrieve the list of tickets.           |
+| report    |    ✅     | Main configuration node for report generation.                                                                                                   |
+| fields    |    ✅     | Main configuration node for fields.                                                                                                              |
 
-Main configuration node for all projects.  
-**It is a mandatory field.**
-
-#### \<Project name\>
-
-Must be replaced by the name of the project. It is a mandatory field.
-This name will be used as a title in the Gantt chart and also as a name in
-Snake case format for the output gantt file.
-
-For example, the following configuration could produce an output file
-*My_important_project.svg* :
+Some attributes could use double quotes to preserve space in their names. The
+YAML syntax provides a solution by replacing with simple quote or escaping
+like JSON :
 
 **_In Yaml :_**
 ```yaml
-Projects:
-  My important project:
-    JQL: "project = TEST"
-  # ...
+jql: 'project = "MY TEST"'
 ```
 **_In Json :_**
 ```json
 {
-  "Projects": {
-    "My important project": {
-      "JQL": "project = TEST"
-    }
-  }
+  "jql": "project = \"MY TEST\""
 }
 ```
 
-#### JQL
+#### Report configuration
 
-In order to retrieve the list of tickets to construct the Gantt chart, Jira
-provides a convenient syntax the [JQL](https://www.atlassian.com/blog/jira-software/jql-the-most-flexible-way-to-search-jira-14).  
-**It is a mandatory field.**
+Configuration node for all attributes related to report generation.
 
-Some fields could use double quotes to preserve space in their names. The YAML
-syntax provides a solution by replacing with simple quote or escaping like
-JSON :
-
-**_In Yaml :_**
-```yaml
-JQL: 'project = "MY TEST"'
-```
-**_In Json :_**
-```json
-{
-  "JQL": "project = \"MY TEST\""
-}
-```
-
-#### Report
-
-For each project, the `Report` node must be defined to defined how it is
-generated.  
-**It is a mandatory field.**
-
-#### Engine
+| Attribute   | Required | Description                                                                |
+|-------------|:--------:|----------------------------------------------------------------------------|
+| space       |    ✅     | Confluence destination space.                                              |
+| parent_page |    ✅     | Confluence parent page of the report page.                                 |
+| engine      |    ❌     | Engine used to create gantt report. **`Confluence` is the default engine** |
+| legend      |    ❌     | Add a legend in the gantt chart. **By default the legend is not added.     |
 
 There are several engines available to produce Gantt chart :
 - `Confluence` chart macro : Produce a chart with a builtin macro. The graph
-  will not include the dependency link.
+  will not include the dependency link.  
+  
 - `PlantUML` macro : Produce a PlantUML graph which will be included in the
   Confluence page with the PlantUML macro.
-
-
-**It is an optional field. The `Confluence` engine will be used by default.**
-
-**_In Yaml :_**
-```yaml
-Report:
-  Engine: "PlantUML"
-```
-**_In Json :_**
-```json
-{
-  "Report": {
-    "Engine": "PlantUML"
-  }
-}
-```
-
-#### Space
-
-The `Space` attribute is used to defined the Confluence destination space.  
-**It is a mandatory field.**
-
-**_In Yaml :_**
-```yaml
-Report:
-  Space: "SPACE"
-```
-**_In Json :_**
-```json
-{
-  "Report": {
-    "Space": "SPACE"
-  }
-}
-```
-
-#### Parent page
-
-The `Parent page` attribute is used to define the Confluence parent page of the
-report page.  
-**It is a mandatory field.**
-
-**_In Yaml :_**
-```yaml
-Report:
-  Parent page: "My Parent Page"
-```
-**_In Json :_**
-```json
-{
-  "Report": {
-    "Parent page": "My Parent Page"
-  }
-}
-```
-
-#### Legend
-
-The `Legend` attribute is used to define if a legend is added in the gantt
-chart.  
-**It is a mandatory field, by default the legend is not added.**
-
-**_In Yaml :_**
-```yaml
-Report:
-  Legend: true
-```
-**_In Json :_**
-```json
-{
-  "Report": {
-    "Legend": true
-  }
-}
-```
-
-#### Model (Not implemented yet)
-
-The `Model` template is a filename written with [Jinja2](https://jinja.palletsprojects.com/en/3.0.x/).
-It will define how the Confluence page will be rendered.
-The template uses [Confluence Wiki Markup](https://confluence.atlassian.com/doc/confluence-wiki-markup-251003035.html).  
-**It is an optional field. the template contains only the Gantt chart.**
-
-**_In Yaml :_**
-```yaml
-Report:
-  Engine: "PlantUML"
-  Model: "report.jinja2"
-```
-**_In Json :_**
-```json
-{
-  "Report": {
-    "Engine": "PlantUML",
-    "Model": "report.jinja2"
-  }
-}
-```
 
 #### Fields
 
@@ -401,3 +274,11 @@ Define the Jira field to use as a percent of work done for task in Gantt chart.
 Define the Jira inward link to use in order to define how the tasks could be
 blocked by others tasks task in Gantt chart.  
 **It is an optional field. By default, the link used is "is blocked by"**
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, shall be as defined in the Apache-2.0 license
+without any additional terms or conditions.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).

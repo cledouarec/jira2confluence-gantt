@@ -1,11 +1,7 @@
-#! python3
-
-"""
-Client to communicate with Jira.
-"""
+"""Client to communicate with Jira."""
 
 import logging
-from typing import List, Optional, Union
+
 from atlassian import Jira
 
 #: Create logger for this file.
@@ -13,18 +9,15 @@ logger = logging.getLogger()
 
 
 class JiraClient:
-    """
-    This class is used to interfacing Jira server.
-    """
+    """Provide an interface to Jira server."""
 
     def __init__(
         self,
         jira_url: str,
         jira_username: str,
         jira_password: str,
-    ):
-        """
-        Constructs the Jira client.
+    ) -> None:
+        """Construct the Jira client.
 
         :param jira_url: URL to connect to Jira.
         :param jira_username: Username to connect to Jira.
@@ -35,11 +28,14 @@ class JiraClient:
         logger.debug("Create Jira client")
 
         if not jira_url:
-            raise Exception("Jira URL is invalid")
+            msg = "Jira URL is invalid"
+            raise ValueError(msg)
         if not jira_username:
-            raise Exception("Jira username is invalid")
+            msg = "Jira username is invalid"
+            raise ValueError(msg)
         if not jira_password:
-            raise Exception("Jira password is invalid")
+            msg = "Jira password is invalid"
+            raise ValueError(msg)
         try:
             self.__jira_client: Jira = Jira(
                 url=jira_url,
@@ -47,13 +43,13 @@ class JiraClient:
                 password=jira_password,
             )
         except Exception as error:
-            raise Exception("Failed to create Jira client") from error
+            msg = "Failed to create Jira client"
+            raise RuntimeError(msg) from error
 
         logger.debug("Jira client created")
 
     def ticket_field_value(self, key: str, field_name: str) -> str:
-        """
-        Get the value of the given `field_name` from an `key` identifier.
+        """Get the value of the given `field_name` from an `key` identifier.
 
         :param key: Ticket identifier.
         :param field_name: Field name of the ticket to retrieve.
@@ -62,8 +58,7 @@ class JiraClient:
         return str(self.__jira_client.issue_field_value(key, field_name))
 
     def ticket_title(self, key: str) -> str:
-        """
-        Get the title from an `key` identifier.
+        """Get the title from an `key` identifier.
 
         :param key: Ticket identifier.
         :return: Ticket title.
@@ -71,10 +66,11 @@ class JiraClient:
         return self.ticket_field_value(key, "summary")
 
     def tickets_from_jql(
-        self, jql: str, fields: Optional[Union[List[str], str]] = None
+        self,
+        jql: str,
+        fields: list[str] | str | None = None,
     ) -> list:
-        """
-        Get tickets from a `jql` request.
+        """Get tickets from a `jql` request.
 
         :param jql: JQL request to find tickets.
         :param fields: list of fields, for example: ['priority', 'summary']
@@ -85,8 +81,7 @@ class JiraClient:
         return self.__jira_client.jql(jql, fields=fields, limit=1000)["issues"]
 
     def custom_field_id_from_name(self, custom_field_name: str) -> str:
-        """
-        Retrieve custom field identifier from custom field name.
+        """Retrieve custom field identifier from custom field name.
 
         :param custom_field_name: Custom field name to convert.
         :return: Custom field identifier or name given in input if no custom
