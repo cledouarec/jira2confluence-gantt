@@ -1,3 +1,9 @@
+## 0.3.2 (2024-03-07)
+
+### Fix
+
+- change environment variable to publish on pypi
+
 ## 0.3.1 (2024-03-07)
 
 ### Fix
