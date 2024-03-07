@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jira2confluence-gantt"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["Christophe Le Douarec <christophe.ledouarec@qorvo.com>"]
 description = "Gantt chart generator from Jira to Confluence"
 readme = "README.md"
@@ -52,7 +52,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.3.2"
+version = "0.3.3"
 version_files = [
     "jira2confluencegantt/__init__.py:__version__",
     "pyproject.toml:^version"

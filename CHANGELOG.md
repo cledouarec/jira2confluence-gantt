@@ -1,3 +1,9 @@
+## 0.3.3 (2024-03-07)
+
+### Refactor
+
+- migrate to pydantic
+
 ## 0.3.2 (2024-03-07)
 
 ### Fix
