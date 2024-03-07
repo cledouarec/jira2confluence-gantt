@@ -43,7 +43,7 @@ pytest-cov = "^4.1.0"
 ruff = "^0.2.2"
 
 [tool.poetry.scripts]
-jira2confluence-gantt = "jira2confluence_gantt.cli:main"
+jira2confluence-gantt = "jira2confluencegantt.cli:main"
 
 [build-system]
 requires = ["poetry-core"]
@@ -53,7 +53,7 @@ build-backend = "poetry.core.masonry.api"
 name = "cz_conventional_commits"
 version = "0.3.0"
 version_files = [
-    "jira2confluence_gantt/__init__.py:__version__",
+    "jira2confluencegantt/__init__.py:__version__",
     "pyproject.toml:^version"
 ]
 style = [
