@@ -1,86 +1,53 @@
-#! python3
+"""Confluence report generation."""
 
-"""
-Confluence report generation.
-"""
-
-from datetime import date
-from enum import Enum, unique
 import logging
-from typing import Any, Optional
+from datetime import date
+
 from dateutil.parser import isoparse
 from jinja2 import Environment, PackageLoader
-from .config import Config
+
+from .config import ChartEngine, GlobalConfig, Project
 from .confluenceclient import ConfluenceClient
 from .jiraclient import JiraClient
-from .task import find_task_by_key, Task, TaskList
-from .utils import keys_exists
+from .task import Task, TaskList, find_task_by_key, print_tasks
 
 #: Create logger for this file.
 logger = logging.getLogger()
 
 
-@unique
-class ChartEngine(Enum):
-    """
-    This class is used to enumerate all engine used to generate a Gantt chart.
-    """
-
-    #: Confluence chart macro
-    CONFLUENCE = "Confluence"
-
-    #: PlantUML generator
-    PLANT_UML = "PlantUML"
-
-
 class ReportEngine:
-    """
-    This class is used to manage report generation on Confluence.
-    """
+    """Manage report generation on Confluence."""
 
     def __init__(
         self,
-        project_name: str,
-        output_space: str,
-        output_parent_page: str,
+        project: Project,
         tasks: TaskList,
-        confluence_client: Optional[ConfluenceClient] = None,
-        has_legend: bool = False,
-    ):
-        """
-        Constructs the report generator for the `project_name`.
-        The report will be generated on the Confluence `output_space` with
-        given `output_parent_page`.
+        confluence_client: ConfluenceClient | None = None,
+    ) -> None:
+        """Construct the report generator for the `project`.
+
         The `tasks` list provides all the task information needed to generate
         gantt.
         The `confluence_client` is optional, in the case which the client is
         not provided, only the gantt would be generated.
 
-        :param project_name: Project name.
-        :param output_space: Project output Confluence space.
-        :param output_parent_page: Project output Confluence parent page.
+        :param project: Project configuration.
         :param tasks: Tasks list extracted from Jira.
         :param confluence_client: Confluence client to publish report.
-        :param has_legend: Define if the report has a legend.
         """
         logger.debug("Create report engine")
 
-        #: Project name
-        self._project_name: str = project_name
-        #: Project output Confluence space
-        self._output_space: str = output_space
-        #: Project output Confluence parent page
-        self._output_parent_page: str = output_parent_page
+        #: Project configuration
+        self._project: Project = project
         #: Tasks list
         self._tasks: TaskList = tasks
         #: Confluence client
-        self._confluence_client: Optional[ConfluenceClient] = confluence_client
-        #: Define if the report has a legend
-        self._has_legend: bool = has_legend
+        self._confluence_client: ConfluenceClient | None = confluence_client
         #: Object to manipulate the templates.
         self._templates: Environment = Environment(
             loader=PackageLoader("jira2confluencegantt"),
             keep_trailing_newline=True,
+            autoescape=True,
         )
 
         # Add custom filter to format the date in the templates
@@ -90,9 +57,9 @@ class ReportEngine:
 
     @staticmethod
     def _format_date(value: date, output_format: str) -> str:
-        """
-        Convert date to given string `output_format`. This method is used to do
-        conversion inside templates.
+        """Convert date to given string `output_format`.
+
+        This method is used to do conversion inside templates.
 
         :param value: Input date to convert.
         :param output_format: Output string format.
@@ -101,20 +68,17 @@ class ReportEngine:
         return value.strftime(output_format)
 
     def generate_gantt(self) -> None:
-        """
-        Generate the gantt chart.
-        """
+        """Generate the gantt chart."""
 
     def publish_report(self) -> None:
-        """
-        Publish the report with the gantt chart.
-        """
+        """Publish the report with the gantt chart."""
 
     def _generate_content_from_template(
-        self, template_name: str, parameters: Any
+        self,
+        template_name: str,
+        parameters: dict,
     ) -> str:
-        """
-        Generate Confluence content from Jinja2 template.
+        """Generate Confluence content from Jinja2 template.
 
         :param template_name: Name of the template to use.
         :param parameters: Parameters used by the template.
@@ -131,49 +95,36 @@ class ReportEngine:
 
 
 class ConfluenceEngine(ReportEngine):
-    """
-    This class is used to manage report generation on Confluence with a Gantt
-    chart generated with Confluence Chart macro.
-    """
+    """Manage report generation on Confluence with Confluence Chart macro."""
 
     #: Confluence Chart macro template
     __CHART_TEMPLATE: str = "confluencechart.jinja2"
 
     def __init__(
         self,
-        project_name: str,
-        output_space: str,
-        output_parent_page: str,
+        project: Project,
         tasks: TaskList,
-        confluence_client: Optional[ConfluenceClient] = None,
-        has_legend: bool = False,
-    ):
-        """
-        Constructs the report generator for the `project_name` with Confluence
-        Chart macro.
-        The report will be generated on the Confluence `output_space` with
-        given `output_parent_page`.
+        confluence_client: ConfluenceClient | None = None,
+    ) -> None:
+        """Construct the report generator  with Confluence Chart macro.
+
+        The report will be generated for the `project_name` on the Confluence
+        `output_space` with given `output_parent_page`.
         The `tasks` list provides all the task information needed to generate
         gantt.
         The `confluence_client` is optional, in the case which the client is
         not provided, only the gantt would be generated.
 
-        :param project_name: Project name.
-        :param output_space: Project output Confluence space.
-        :param output_parent_page: Project output Confluence parent page.
+        :param project: Project configuration.
         :param tasks: Tasks list extracted from Jira.
         :param confluence_client: Confluence client to publish report.
-        :param has_legend: Define if the report has a legend.
         """
         logger.debug("Create Confluence report engine")
 
         super().__init__(
-            project_name,
-            output_space,
-            output_parent_page,
+            project,
             tasks,
             confluence_client,
-            has_legend,
         )
 
         #: Confluence gantt macro
@@ -182,38 +133,36 @@ class ConfluenceEngine(ReportEngine):
         logger.debug("Confluence report engine created")
 
     def generate_gantt(self) -> None:
-        """
-        Generate the gantt chart.
-        """
+        """Generate the gantt chart."""
         logger.debug(
-            "Generate gantt chart with Confluence for %s", self._project_name
+            "Generate gantt chart with Confluence for %s",
+            self._project.name,
         )
 
         self.__gantt = self._generate_content_from_template(
             ConfluenceEngine.__CHART_TEMPLATE,
             {
                 "tasks": self._tasks.to_pre_order_list(),
-                "has_legend": self._has_legend,
+                "has_legend": self._project.report.legend,
             },
         )
 
         logger.debug(
-            "Gantt chart with Confluence for %s generated", self._project_name
+            "Gantt chart with Confluence for %s generated",
+            self._project.name,
         )
 
     def publish_report(self) -> None:
-        """
-        Publish the report with the gantt chart.
-        """
+        """Publish the report with the gantt chart."""
         if not self._confluence_client:
             return
 
         logger.debug("Publish report on Confluence with Confluence engine")
 
         self._confluence_client.create_new_page(
-            space=self._output_space,
-            parent_page=self._output_parent_page,
-            title="[{project}] Gantt".format(project=self._project_name),
+            space=self._project.report.space,
+            parent_page=self._project.report.parent_page,
+            title=f"[{self._project.name}] Gantt",
             message=self.__gantt,
         )
 
@@ -221,10 +170,7 @@ class ConfluenceEngine(ReportEngine):
 
 
 class PlantUMLEngine(ReportEngine):
-    """
-    This class is used to manage report generation on Confluence with a Gantt
-    chart generated with PlantUML.
-    """
+    """Manage report generation on Confluence generated with PlantUML."""
 
     #: PlantUML template
     __PLANT_UML_TEMPLATE: str = "plantuml.jinja2"
@@ -234,38 +180,27 @@ class PlantUMLEngine(ReportEngine):
 
     def __init__(
         self,
-        project_name: str,
-        output_space: str,
-        output_parent_page: str,
+        project: Project,
         tasks: TaskList,
-        confluence_client: Optional[ConfluenceClient] = None,
-        has_legend: bool = False,
-    ):
-        """
-        Constructs the report generator for the `project_name` with PlantUML.
-        The report will be generated on the Confluence `output_space` with
-        given `output_parent_page`.
+        confluence_client: ConfluenceClient | None = None,
+    ) -> None:
+        """Construct the report generator for the `project` with PlantUML.
+
         The `tasks` list provides all the task information needed to generate
         gantt.
         The `confluence_client` is optional, in the case which the client is
         not provided, only the gantt would be generated.
 
-        :param project_name: Project name.
-        :param output_space: Project output Confluence space.
-        :param output_parent_page: Project output Confluence parent page.
+        :param project: Project configuration.
         :param tasks: Tasks list extracted from Jira.
         :param confluence_client: Confluence client to publish report.
-        :param has_legend: Define if the report has a legend.
         """
         logger.debug("Create PlantUML report engine")
 
         super().__init__(
-            project_name,
-            output_space,
-            output_parent_page,
+            project,
             tasks,
             confluence_client,
-            has_legend,
         )
 
         self.__gantt = ""
@@ -273,29 +208,27 @@ class PlantUMLEngine(ReportEngine):
         logger.debug("PlantUML report engine created")
 
     def generate_gantt(self) -> None:
-        """
-        Generate the gantt chart in SVG format.
-        """
+        """Generate the gantt chart in SVG format."""
         logger.debug(
-            "Generate gantt chart with PlantUML for %s", self._project_name
+            "Generate gantt chart with PlantUML for %s",
+            self._project.name,
         )
 
         self.__gantt = self._generate_content_from_template(
             PlantUMLEngine.__PLANT_UML_TEMPLATE,
             {
                 "tasks": self._tasks.to_pre_order_list(),
-                "has_legend": self._has_legend,
+                "has_legend": self._project.report.legend,
             },
         )
 
         logger.debug(
-            "Gantt chart with PlantUML for %s generated", self._project_name
+            "Gantt chart with PlantUML for %s generated",
+            self._project.name,
         )
 
     def publish_report(self) -> None:
-        """
-        Publish the report with the gantt chart.
-        """
+        """Publish the report with the gantt chart."""
         if not self._confluence_client:
             return
 
@@ -306,28 +239,26 @@ class PlantUMLEngine(ReportEngine):
             {"plantuml": self.__gantt},
         )
         self._confluence_client.create_new_page(
-            space=self._output_space,
-            parent_page=self._output_parent_page,
-            title="[{project}] Gantt".format(project=self._project_name),
+            space=self._project.report.space,
+            parent_page=self._project.report.parent_page,
+            title=f"[{self._project.name}] Gantt",
             message=message,
         )
 
         logger.debug("Report published on Confluence with PlantUML engine")
 
 
-def _tickets_from_project(
-    jira_client: JiraClient, project_config: dict
-) -> list:
-    """
-    Get all tickets with needed fields for a given project configuration and
-    sorted the list by start date and end date.
+def _tickets_from_project(jira_client: JiraClient, project: Project) -> list:
+    """Get all tickets for a given project configuration.
+
+    The result list will be sorted by start date and end date.
 
     :param jira_client: Jira client to retrieve tickets information.
-    :param project_config: Project configuration with JQL or fields to extract.
+    :param project: Project configuration with JQL or fields to extract.
     :return: Tickets list for this project.
     """
-    start_date_field = project_config["Fields"]["Start date"]
-    end_date_field = project_config["Fields"]["End date"]
+    start_date_field = project.fields.start_date
+    end_date_field = project.fields.end_date
     fields = [
         "key",
         "summary",
@@ -337,16 +268,13 @@ def _tickets_from_project(
         "subtasks",
         "issuelinks",
     ]
-    if project_config["Fields"]["Progress"]:
-        fields.append(project_config["Fields"]["Progress"])
+    if project.fields.progress:
+        fields.append(project.fields.progress)
 
-    tickets = jira_client.tickets_from_jql(
-        jql=project_config["JQL"], fields=fields
-    )
+    tickets = jira_client.tickets_from_jql(jql=project.jql, fields=fields)
 
     def _has_start_and_end_dates(ticket: dict) -> bool:
-        """
-        Check if the `ticket` has a start and end dates.
+        """Check if the `ticket` has a start and end dates.
 
         :param ticket: Ticket to test.
         :return: Boolean status of the check.
@@ -364,49 +292,47 @@ def _tickets_from_project(
     )
 
 
-def _create_tasks_from_tickets(
-    tickets: list, project_config: dict
-) -> TaskList:
-    """
-    Create all tasks from a list of `tickets` and a given `project_config`.
+def _create_tasks_from_tickets(tickets: list, project: Project) -> TaskList:
+    """Create all tasks from a list of `tickets`.
+
     The tasks list is ordered according to the start date field.
 
     :param tickets: Tickets list.
-    :param project_config: Project configuration.
+    :param project: Project configuration.
     :return: Tasks list for this project.
     """
-    start_date_field = project_config["Fields"]["Start date"]
-    end_date_field = project_config["Fields"]["End date"]
-    progress_field = project_config["Fields"]["Progress"]
-    link_type = project_config["Fields"]["Link"]
+    start_date_field = project.fields.start_date
+    end_date_field = project.fields.end_date
+    progress_field = project.fields.progress
+    link_type = project.fields.link
 
     tasks = TaskList()
     for ticket in tickets:
         # Get blocking tasks
-        blocking_tasks = []
-        for link in ticket["fields"]["issuelinks"]:
-            if link["type"]["inward"] == link_type and keys_exists(
-                link, "inwardIssue"
-            ):
-                # Add only if the blocking task is present in the ticket list.
-                for _ticket in tickets:
-                    if _ticket["key"] == link["inwardIssue"]["key"]:
-                        blocking_tasks.append(link["inwardIssue"]["key"])
-                        break
+        blocking_tasks = [
+            link["inwardIssue"]["key"]
+            for link in ticket["fields"]["issuelinks"]
+            if link.get("type", {}).get("inward") == link_type
+            and "inwardIssue" in link
+            and any(
+                _ticket["key"] == link["inwardIssue"]["key"]
+                for _ticket in tickets
+            )
+        ]
 
         # Get parent
         parent = None
-        if keys_exists(ticket["fields"], "parent", "key"):
-            parent = find_task_by_key(tasks, ticket["fields"]["parent"]["key"])
+        if parent_key := ticket["fields"].get("parent", {}).get("key"):
+            parent = find_task_by_key(tasks, parent_key)
         if parent is None:
             parent = tasks
 
         # Get children
-        children = []
-        for sub_task in ticket["fields"]["subtasks"]:
-            child = find_task_by_key(tasks, sub_task["key"])
-            if child:
-                children.append(child)
+        children = [
+            child
+            for sub_task in ticket["fields"]["subtasks"]
+            if (child := find_task_by_key(tasks, sub_task["key"])) is not None
+        ]
 
         Task(
             key=ticket["key"],
@@ -422,74 +348,57 @@ def _create_tasks_from_tickets(
 
 
 def _create_report_engine(
-    project_name: str,
-    project_config: dict,
+    project: Project,
     tasks: TaskList,
-    confluence_client: Optional[ConfluenceClient] = None,
+    confluence_client: ConfluenceClient | None = None,
 ) -> ReportEngine:
-    """
-    Create the report engine depending of the engine configured by the
-    `project_config`. The `confluence_client` is optional, in the case
-    which the client is not provided, only the gantt would be generated.
+    """Create the report engine based on `project` configuration.
 
-    :param project_name: Project name.
-    :param project_config: Project configuration with fields and links to
-    use.
+    The `confluence_client` is optional, in the case which the client is not
+    provided, only the gantt would be generated.
+
+    :param project: Project configuration with fields and links to use.
     :param tasks: Tasks list extracted from Jira.
     :param confluence_client: Confluence client to publish report.
     :return: New report engine created.
     """
-    chart_engine = ChartEngine(project_config["Report"]["Engine"])
-    output_space = project_config["Report"]["Space"]
-    output_parent_page = project_config["Report"]["Parent page"]
-    legend = project_config["Report"]["Legend"]
+    chart_engine = project.report.engine
 
     if chart_engine == ChartEngine.CONFLUENCE:
         return ConfluenceEngine(
-            project_name,
-            output_space,
-            output_parent_page,
+            project,
             tasks,
             confluence_client,
-            legend,
         )
     if chart_engine == ChartEngine.PLANT_UML:
         return PlantUMLEngine(
-            project_name,
-            output_space,
-            output_parent_page,
+            project,
             tasks,
             confluence_client,
-            legend,
         )
-    raise Exception("Invalid Gantt engine")
+    msg = "Invalid Gantt engine"
+    raise ValueError(msg)
 
 
-def generate_all_reports(
-    jira_client: JiraClient,
-    config: Config,
-    confluence_client: Optional[ConfluenceClient] = None,
-) -> None:
-    """
-    Generate all reports. The `confluence_client` is optional, in the case
-    which the client is not provided, only the gantt would be generated.
+def generate_all_reports(global_config: GlobalConfig) -> None:
+    """Generate all reports given by `global_config`.
 
-    :param jira_client: Jira client to retrieve tickets information.
-    :param confluence_client: Confluence client to publish gantt charts.
-    :param config: Global configuration.
+    :param global_config: Global configuration.
     """
     logger.info("Generate report on Confluence")
 
-    config.update_custom_fields(jira_client)
-
-    for project_name, project_config in config.projects.items():
+    for project in global_config.config.projects:
         # Create the tasks from the tickets
-        tickets = _tickets_from_project(jira_client, project_config)
-        tasks = _create_tasks_from_tickets(tickets, project_config)
+        tickets = _tickets_from_project(global_config.jira_client(), project)
+        tasks = _create_tasks_from_tickets(tickets, project)
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            print_tasks(tasks)
 
         # Create the engine according to engine specified
         engine = _create_report_engine(
-            project_name, project_config, tasks, confluence_client
+            project,
+            tasks,
+            global_config.confluence_client(),
         )
 
         # Create gantt and publish on Confluence

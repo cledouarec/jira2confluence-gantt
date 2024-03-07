@@ -1,23 +1,23 @@
-Server:
-  Jira: "https://my.jira.server.com"
-  Confluence: "https://my.confluence.server.com"
+server:
+  jira: "https://my.jira.server.com"
+  confluence: "https://my.confluence.server.com"
 
-Projects:
-  Project name:
-    JQL: "project = TEST"
-    Report:
-      Engine: "PlantUML"
-      Space: "SPACE"
-      Parent page: "My Parent Page"
-    Fields:
-      Start date: "Start date (WBSGantt)"
-      End date: "Finish date (WBSGantt)"
-  Second project name:
-    JQL: "project = TEST2"
-    Report:
-      Engine: "PlantUML"
-      Space: "SPACE"
-      Parent page: "My Parent Page"
-    Fields:
-      Start date: "Start date (WBSGantt)"
-      End date: "Finish date (WBSGantt)"
+projects:
+  - name: "Project name"
+    jql: "project = TEST"
+    report:
+      space: "SPACE"
+      parent_page: "My Parent Page"
+      engine: "PlantUML"
+    fields:
+      start_date: "Start date (WBSGantt)"
+      end_date: "Finish date (WBSGantt)"
+  - name: "Second project name"
+    jql: "project = TEST2"
+    report:
+      space: "SPACE"
+      parent_page: "My Parent Page"
+      engine: "PlantUML"
+    fields:
+      start_date: "Start date (WBSGantt)"
+      end_date: "Finish date (WBSGantt)"

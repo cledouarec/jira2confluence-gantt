@@ -1,24 +1,17 @@
-#! python3
-
-"""
-Main entry point to generate gantt chart
-"""
+"""Main entry point to generate gantt chart."""
 
 import argparse
 import logging
-import os
 import sys
-from dotenv import load_dotenv
-from .config import load_config
-from .confluenceclient import ConfluenceClient
-from .jiraclient import JiraClient
+
+from pydantic import ValidationError
+
+from .config import load_global_config
 from .report import generate_all_reports
 
 
 def _create_argument_parser() -> argparse.ArgumentParser:
-    """
-    Create the list of arguments supported and return the parser.
-    """
+    """Create the list of arguments supported and return the parser."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-v",
@@ -38,17 +31,12 @@ def _create_argument_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """
-    Entry point of gantt generator script.
-    """
+    """Entry point of gantt generator script."""
     # Parse command line
     parser = _create_argument_parser()
     args = parser.parse_args()
 
-    if args.verbose:
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.INFO
+    log_level = logging.DEBUG if args.verbose else logging.INFO
 
     # Create logger
     logging.basicConfig(
@@ -62,23 +50,11 @@ def main() -> None:
         return
 
     # Get configuration from JSON/YAML file
-    config = load_config(args.config)
-    if args.verbose:
-        config.dump()
+    try:
+        global_config = load_global_config(args.config)
+        global_config.update_custom_fields()
+    except ValidationError as error:
+        sys.exit(str(error))
 
-    # Retrieve Atlassian secrets from .env or environment variables
-    load_dotenv()
-
-    jira_client = JiraClient(
-        config.jira,
-        os.environ["ATLASSIAN_USER"],
-        os.environ["ATLASSIAN_TOKEN"],
-    )
-    confluence_client = None
-    if config.confluence:
-        confluence_client = ConfluenceClient(
-            config.confluence,
-            os.environ["ATLASSIAN_USER"],
-            os.environ["ATLASSIAN_TOKEN"],
-        )
-    generate_all_reports(jira_client, config, confluence_client)
+    logging.getLogger().debug(global_config.json())
+    generate_all_reports(global_config)

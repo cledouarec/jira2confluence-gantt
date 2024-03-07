@@ -1,225 +1,228 @@
-#! python3
-
-"""
-Manage configuration file.
-"""
+"""Manage configuration file."""
 
 import json
 import logging
-import pathlib
+from dataclasses import dataclass
+from enum import Enum, unique
+from pathlib import Path
+
 import yaml
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    SecretStr,
+    StrictBool,
+)
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .confluenceclient import ConfluenceClient
 from .jiraclient import JiraClient
-from .utils import keys_exists
 
 #: Create logger for this file.
 logger = logging.getLogger()
 
 
-class Config:
-    """
-    This class is used to manage configuration.
-    """
+class Secrets(BaseSettings):
+    """Store all secrets from environment variables."""
 
-    def __init__(self, config: dict):
+    #: Specific configuration
+    model_config = SettingsConfigDict(
+        frozen=False,
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+    #: Username for Jira/Confluence
+    user: str = Field(alias="ATLASSIAN_USER")
+    #: Token for Jira/Confluence
+    token: SecretStr = Field(alias="ATLASSIAN_TOKEN")
+
+
+class ImmutableModel(BaseModel):
+    """Provide immutable model. It is used as base madel."""
+
+    #: Specific configuration
+    model_config = ConfigDict(frozen=False)
+
+
+class Server(ImmutableModel):
+    """Store server configuration."""
+
+    #: Jira URL
+    jira: HttpUrl
+    #: Confluence URL
+    confluence: HttpUrl | None = None
+
+
+@unique
+class ChartEngine(Enum):
+    """Enumerate all engine used to generate a Gantt chart."""
+
+    #: Confluence chart macro
+    CONFLUENCE = "Confluence"
+    #: PlantUML generator
+    PLANT_UML = "PlantUML"
+
+
+class Report(ImmutableModel):
+    """Store report configuration."""
+
+    #: Confluence output space.
+    space: str
+    #: Confluence parent page.
+    parent_page: str
+    #: Engine to produce gantt.
+    engine: ChartEngine = ChartEngine.CONFLUENCE
+    #: Enable gantt legend.
+    legend: StrictBool = False
+
+
+class Fields(BaseModel):
+    """Store fields configuration."""
+
+    #: Jira field to get start date.
+    start_date: str
+    #: Jira field to get as end date.
+    end_date: str
+    #: Jira field to get task completion.
+    progress: str | None = None
+    #: Jira link to use as dependency.
+    link: str = "is blocked by"
+
+
+class Project(ImmutableModel):
+    """Store project configuration."""
+
+    #: Project name
+    name: str
+    #: Query to retrieve tickets
+    jql: str
+    #: Report configuration.
+    report: Report
+    #: Fields configuration
+    fields: Fields
+
+
+class Config(ImmutableModel):
+    """Store main configuration excepted secrets."""
+
+    #: Server configuration.
+    server: Server
+    #: List of all projects
+    projects: list[Project]
+
+
+@dataclass
+class GlobalConfig:
+    """Global configuration."""
+
+    #: Secrets configuration.
+    secrets: Secrets
+    # Main configuration.
+    config: Config
+
+    def json(self) -> str:
+        """Return the configuration in json format.
+
+        :return: Configuration string in JSON format.
         """
-        Constructs the configuration from dictionary.
+        return f"""
+        {
+            {
+                "secrets": {self.secrets.model_dump_json()},
+                "config": {self.config.model_dump_json()}
+            }
+        }"""
 
-        :param config: Configuration dictionary.
+    def confluence_client(self) -> ConfluenceClient:
+        """Create and return a Jira client.
+
+        :return: Jira client.
         """
-        logger.debug("Create configuration")
+        return ConfluenceClient(
+            str(self.config.server.confluence),
+            self.secrets.user,
+            self.secrets.token.get_secret_value(),
+        )
 
-        Config._check_config(config)
+    def jira_client(self) -> JiraClient:
+        """Create and return a Jira client.
 
-        #: Configuration dictionary already parsed
-        self._config: dict = config
-
-        logger.debug("Configuration created")
-
-    @staticmethod
-    def _check_server_config(config: dict) -> None:
+        :return: Jira client.
         """
-        Check server configuration, update with default values for optional
-        fields or raise an error for mandatory fields.
+        return JiraClient(
+            str(self.config.server.jira),
+            self.secrets.user,
+            self.secrets.token.get_secret_value(),
+        )
 
-        :param config: Configuration dictionary.
-        :raises Exception: If configuration is invalid.
-        """
-        if not keys_exists(config, "Server"):
-            raise Exception("Missing Server node in configuration")
-        if not keys_exists(config, "Server", "Jira"):
-            raise Exception("Missing Jira server configuration")
-        if not keys_exists(config, "Server", "Confluence"):
-            config["Server"]["Confluence"] = None
-
-    @staticmethod
-    def _check_project_config(project_name: str, project_config: dict) -> None:
-        """
-        Check project configuration, update with default values for optional
-        fields or raise an error for mandatory fields.
-
-        :param project_name: Project name.
-        :param project_config: Project configuration dictionary.
-        :raises Exception: If configuration is invalid.
-        """
-        if not keys_exists(project_config, "JQL"):
-            raise Exception(
-                "Missing JQL configuration for %s project" % project_name
+    def update_custom_fields(self) -> None:
+        """Update the Jira custom fields name by field identifier."""
+        jira_client = self.jira_client()
+        for project in self.config.projects:
+            project.fields.start_date = jira_client.custom_field_id_from_name(
+                project.fields.start_date,
             )
-
-        if not keys_exists(project_config, "Report"):
-            raise Exception(
-                "Missing Report node configuration for %s project"
-                % project_name,
+            project.fields.end_date = jira_client.custom_field_id_from_name(
+                project.fields.end_date,
             )
-        if not keys_exists(project_config, "Report", "Engine"):
-            project_config["Report"]["Engine"] = "Confluence"
-        if not keys_exists(project_config, "Report", "Legend"):
-            project_config["Report"]["Legend"] = False
-        if not keys_exists(project_config, "Report", "Model"):
-            project_config["Report"]["Model"] = None
-
-        if not keys_exists(project_config, "Fields"):
-            raise Exception(
-                "Missing Fields node configuration for %s project"
-                % project_name,
-            )
-        if not keys_exists(project_config, "Fields", "Start date"):
-            raise Exception(
-                "Missing Start date configuration for %s project"
-                % project_name,
-            )
-        if not keys_exists(project_config, "Fields", "End date"):
-            raise Exception(
-                "Missing End date configuration for %s project" % project_name,
-            )
-        if not keys_exists(project_config, "Fields", "Progress"):
-            project_config["Fields"]["Progress"] = None
-        if not keys_exists(project_config, "Fields", "Link"):
-            project_config["Fields"]["Link"] = "is blocked by"
-
-    @staticmethod
-    def _check_config(config: dict) -> None:
-        """
-        Check configuration, update with default values for optional fields or
-        raise an error for mandatory fields.
-
-        :param config: Configuration dictionary.
-        :raises Exception: If configuration is invalid.
-        """
-        Config._check_server_config(config)
-
-        if not keys_exists(config, "Projects"):
-            raise Exception("Missing Projects node configuration")
-        for project_name, project_config in config["Projects"].items():
-            Config._check_project_config(project_name, project_config)
-
-    def dump(self) -> None:
-        """
-        Dump the configuration.
-        """
-        print(self._config)
-
-    @property
-    def jira(self) -> str:
-        """
-        Get Jira server URL.
-
-        :return: Jira server URL.
-        """
-        return self._config["Server"]["Jira"]
-
-    @property
-    def confluence(self) -> str:
-        """
-        Get Confluence server URL.
-
-        :return: Confluence server URL.
-        """
-        return self._config["Server"]["Confluence"]
-
-    @property
-    def projects(self) -> dict:
-        """
-        Get list of dictionary for all projects configuration.
-
-        :return: List of project configuration.
-        """
-        return self._config["Projects"]
-
-    def update_custom_fields(self, jira_client: JiraClient) -> None:
-        """
-        Update the Jira custom fields name in configuration by identifier.
-
-        :param jira_client: Jira client used to request custom fields
-        identifier.
-        """
-        for project in self._config["Projects"]:
-            for field in ["Start date", "End date", "Progress"]:
-                value = self._config["Projects"][project]["Fields"][field]
-                if value:
-                    self._config["Projects"][project]["Fields"][
-                        field
-                    ] = jira_client.custom_field_id_from_name(value)
+            if project.fields.progress:
+                project.fields.progress = (
+                    jira_client.custom_field_id_from_name(
+                        project.fields.progress,
+                    )
+                )
 
 
-class YamlConfig(Config):
+def _parse_yaml_config(yaml_config_file: Path) -> dict:
+    """Construct the configuration from YAML file.
+
+    :param yaml_config_file: YAML configuration file to parse.
+    :raises Exception: If configuration file is invalid.
     """
-    This class is used to manage YAML configuration.
+    logger.info("Parse YAML configuration from %s", yaml_config_file)
+
+    try:
+        with yaml_config_file.open(encoding="utf-8") as yaml_config:
+            return yaml.safe_load(yaml_config)
+    except yaml.YAMLError as error:
+        msg = "Failed to parse YAML configuration"
+        raise ValueError(msg) from error
+
+
+def _parse_json_config(json_config_file: Path) -> dict:
+    """Construct the configuration from JSON file.
+
+    :param json_config_file: JSON configuration file to parse.
+    :raises Exception: If configuration file is invalid.
     """
+    logger.info("Parse JSON configuration from %s", json_config_file)
 
-    def __init__(self, yaml_config_file: str):
-        """
-        Constructs the configuration from YAML file.
-
-        :param yaml_config_file: YAML configuration file to parse.
-        :raises Exception: If configuration file is invalid.
-        """
-        logger.info("Parse YAML configuration from %s", yaml_config_file)
-
-        try:
-            with open(yaml_config_file) as yaml_config:
-                super().__init__(yaml.safe_load(yaml_config))
-        except Exception as error:
-            raise Exception("Failed to parse YAML configuration") from error
-
-        logger.info("Configuration YAML parsed")
+    try:
+        with json_config_file.open(encoding="utf-8") as json_config:
+            return json.load(json_config)
+    except json.JSONDecodeError as error:
+        msg = "Failed to parse JSON configuration"
+        raise ValueError(msg) from error
 
 
-class JsonConfig(Config):
-    """
-    This class is used to manage JSON configuration.
-    """
-
-    def __init__(self, json_config_file: str):
-        """
-        Constructs the configuration from JSON file.
-
-        :param json_config_file: JSON configuration file to parse.
-        :raises Exception: If configuration file is invalid.
-        """
-        logger.info("Parse JSON configuration from %s", json_config_file)
-
-        try:
-            with open(json_config_file) as json_config:
-                super().__init__(json.load(json_config))
-        except Exception as error:
-            raise Exception("Failed to parse JSON configuration") from error
-
-        logger.info("Configuration JSON parsed")
-
-
-def load_config(config_file: str) -> Config:
-    """
-    Loads the configuration file (JSON or YAML).
+def load_global_config(config_file: str) -> GlobalConfig:
+    """Load the configuration file (JSON or YAML) and the secrets.
 
     :param config_file: Configuration file to parse.
     :return: Configuration parsed.
     :raises Exception: If configuration extension file is unknown (.json,
     .yaml, .yml).
+    :raises ValidationError: If configuration is invalid.
     """
-    config_type = pathlib.Path(config_file).suffix
-    if config_type in [".yaml", ".yml"]:
-        return YamlConfig(config_file)
-    if config_type == ".json":
-        return JsonConfig(config_file)
-    raise Exception("Unknown file extension for configuration")
+    config_file_path = Path(config_file)
+    if config_file_path.suffix in [".yaml", ".yml"]:
+        config = _parse_yaml_config(config_file_path)
+    elif config_file_path.suffix == ".json":
+        config = _parse_json_config(config_file_path)
+    else:
+        msg = "Unknown file extension for configuration"
+        raise ValueError(msg)
+    return GlobalConfig(Secrets(), Config.model_validate(config))
